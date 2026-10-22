@@ -8,7 +8,7 @@ if (isProd) {
   if (/localhost|127\.0\.0\.1/.test(env.CLIENT_ORIGIN)) console.warn("CLIENT_ORIGIN points at localhost. cors and email links will be wrong.");
   if (!env.ADMIN_EMAIL) console.warn("ADMIN_EMAIL is not set. nobody can open the admin area.");
   if (!env.RESEND_API_KEY) console.warn("RESEND_API_KEY is not set. verification and reset emails will not be sent.");
-  if (env.STORAGE_DRIVER === "local") console.warn("STORAGE_DRIVER=local. files are lost on hosts with an ephemeral disk. use s3.");
+  if (env.STORAGE_PROVIDER === "local") console.warn("STORAGE_PROVIDER=local. files are lost on hosts with an ephemeral disk. use an S3-compatible provider.");
   if (!env.API_PUBLIC_URL) console.warn("API_PUBLIC_URL is not set. uploaded image links will point at localhost.");
 }
 process.on("unhandledRejection", (e) => console.error("unhandled rejection", e));

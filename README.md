@@ -13,7 +13,7 @@ bun test                 # unit tests, no database or network needed
 
 ## deploy
 1. mongodb: create a cluster (atlas free tier works) and use its connection string as `MONGODB_URI`.
-2. storage: render's disk is ephemeral, so use `STORAGE_DRIVER=s3` with any s3 compatible bucket (aws s3, cloudflare r2, backblaze b2, minio). local disk is for development only.
+2. storage: render's disk is ephemeral, so use the default `STORAGE_PROVIDER=b2` with a private Backblaze B2 bucket, or choose `s3`, `r2`, or `custom` for another S3-compatible provider. local disk is for development only.
 3. host (render, railway, fly): build `bun install`, start `bun run start`, health check `/api/health`. `render.yaml` is included. serve it over https.
 4. set the environment variables below. `CLIENT_ORIGIN` must be your exact frontend origin, and `API_PUBLIC_URL` this api's public base url (used for uploaded image links).
 5. register webhooks (see payments) and, for google sign in, add your frontend origin to the oauth client.
@@ -25,7 +25,7 @@ required: `MONGODB_URI`, `JWT_SECRET` (32+ random chars), `CLIENT_ORIGIN`.
 - ai: `AI_PROVIDER` (`gemini`, `anthropic` or `none`), `GEMINI_API_KEY` or `ANTHROPIC_API_KEY`, optional `AI_MODEL`.
 - admin: `ADMIN_EMAIL`, the only (verified) account that can open `/admin`.
 - payments: `PAYMENT_PROVIDERS` (comma list of `bachs`, `paypal`), `BACHS_API_KEY`, `BACHS_WEBHOOK_SECRET`, `PAYMENT_CURRENCY`, `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`, `PAYPAL_ENV`, `PAYPAL_WEBHOOK_ID`, `PAYPAL_CURRENCY`, `PAYPAL_PAYOUTS`, `PLATFORM_FEE_BPS`, `DATA_ENCRYPTION_KEY` (`openssl rand -base64 32`, encrypts payout details).
-- files: `STORAGE_DRIVER`, `S3_*`, `STORAGE_DIR`, `MAX_UPLOAD_MB`, `API_PUBLIC_URL`.
+- files: `STORAGE_PROVIDER` (`b2` by default, `s3`, `r2`, `custom`, or explicit `local` for development), `S3_*`, `STORAGE_DIR`, `MAX_UPLOAD_MB`, `API_PUBLIC_URL`. `b2` derives `https://s3.<S3_REGION>.backblazeb2.com` when `S3_ENDPOINT` is omitted; `r2` and `custom` require `S3_ENDPOINT`.
 see `.env.example` for every value.
 
 ## api
@@ -58,6 +58,7 @@ access tokens last 15 minutes. the refresh token is an httpOnly cookie, rotated 
 - update numbers come from an atomic counter at publish time. publishing is always an explicit action and uses an atomic claim, so a double click or the scheduler cannot publish twice.
 - invitations store only a token hash, expire, and email invitations need a matching verified email. opening a link never joins by itself.
 - uploads are untrusted: images are checked by their first bytes (png, jpeg, webp, gif, never svg) and served with `nosniff`. documents are private and only served through authorized routes as downloads, with random storage keys.
+- the object-storage bucket must remain private. Files are read through authorized backend routes; do not enable public bucket access or public object ACLs.
 - profile privacy (public, followers, people who share an organization, only me) is enforced here, and suspended users and organizations disappear from search and feeds.
 - helmet, cors limited to `CLIENT_ORIGIN`, rate limits on auth, ai, uploads and admin, body size limits, zod validation on every body, and a fail-fast database connection.
 

@@ -23,13 +23,16 @@ const local: Storage = {
 };
 
 function s3(): Storage {
-  if (!env.S3_BUCKET || !env.S3_ACCESS_KEY_ID || !env.S3_SECRET_ACCESS_KEY) throw new Error("STORAGE_DRIVER=s3 needs S3_BUCKET, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY");
+  if (!env.S3_BUCKET || !env.S3_ACCESS_KEY_ID || !env.S3_SECRET_ACCESS_KEY) throw new Error("S3 storage needs S3_BUCKET, S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY");
   const Bucket = env.S3_BUCKET;
-  const c = new S3Client({ region: env.S3_REGION, endpoint: env.S3_ENDPOINT, forcePathStyle: !!env.S3_ENDPOINT, credentials: { accessKeyId: env.S3_ACCESS_KEY_ID, secretAccessKey: env.S3_SECRET_ACCESS_KEY } });
+  const endpoint = env.S3_ENDPOINT ?? (env.STORAGE_PROVIDER === "b2" ? `https://s3.${env.S3_REGION}.backblazeb2.com` : undefined);
+  if (env.STORAGE_PROVIDER === "r2" && !endpoint) throw new Error("STORAGE_PROVIDER=r2 needs S3_ENDPOINT");
+  if (env.STORAGE_PROVIDER === "custom" && !endpoint) throw new Error("STORAGE_PROVIDER=custom needs S3_ENDPOINT");
+  const c = new S3Client({ region: env.S3_REGION, endpoint, forcePathStyle: env.STORAGE_PROVIDER === "custom" || env.STORAGE_PROVIDER === "b2" || !!env.S3_ENDPOINT, credentials: { accessKeyId: env.S3_ACCESS_KEY_ID, secretAccessKey: env.S3_SECRET_ACCESS_KEY } });
   return {
     async put(data) { const Key = newKey(); await c.send(new PutObjectCommand({ Bucket, Key, Body: data })); return Key; },
     async read(Key) { if (!safe(Key)) throw new Error("bad key"); const r = await c.send(new GetObjectCommand({ Bucket, Key })); return Readable.from(Buffer.from(await r.Body!.transformToByteArray())); }, // files are capped at 25 mb
     async remove(Key) { if (safe(Key)) await c.send(new DeleteObjectCommand({ Bucket, Key })).catch(() => undefined); },
   };
 }
-export const storage: Storage = env.STORAGE_DRIVER === "s3" ? s3() : local;
+export const storage: Storage = env.STORAGE_PROVIDER === "local" ? local : s3();

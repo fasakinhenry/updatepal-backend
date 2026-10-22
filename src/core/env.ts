@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const optionalUrl = z.preprocess((value) => value === "" ? undefined : value, z.string().url().optional());
+
 const schema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   PORT: z.coerce.number().default(4000),
@@ -34,10 +36,10 @@ const schema = z.object({
   DATA_ENCRYPTION_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   MAIL_FROM: z.string().default("updatebase <onboarding@resend.dev>"),
-  // local disk is fine for development only. hosts with ephemeral disks (render free tier) lose local files on every deploy, so use s3 there.
-  STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
+  // b2 is the default S3-compatible provider. local is for development only.
+  STORAGE_PROVIDER: z.enum(["b2", "s3", "r2", "custom", "local"]).default("b2"),
   STORAGE_DIR: z.string().default("./storage"),
-  S3_BUCKET: z.string().optional(), S3_REGION: z.string().default("auto"), S3_ENDPOINT: z.string().url().optional(), // set for r2, backblaze, minio and other s3 compatible stores
+  S3_BUCKET: z.string().optional(), S3_REGION: z.string().default("us-east-1"), S3_ENDPOINT: optionalUrl, // set for r2, b2, minio and other s3 compatible stores
   S3_ACCESS_KEY_ID: z.string().optional(), S3_SECRET_ACCESS_KEY: z.string().optional(),
   MAX_UPLOAD_MB: z.coerce.number().default(25),
 });

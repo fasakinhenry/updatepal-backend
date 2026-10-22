@@ -13,4 +13,4 @@ services:
       - { key: CLIENT_ORIGIN, sync: false }
       - { key: API_PUBLIC_URL, sync: false }
       - { key: ADMIN_EMAIL, sync: false }
-      - { key: STORAGE_DRIVER, value: s3 }
+      - { key: STORAGE_PROVIDER, value: b2 }
