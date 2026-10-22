@@ -1,0 +1,16 @@
+# render blueprint for the api. fill in the secrets in the render dashboard.
+services:
+  - type: web
+    name: updatebase-api
+    runtime: node
+    buildCommand: curl -fsSL https://bun.sh/install | bash && ~/.bun/bin/bun install
+    startCommand: ~/.bun/bin/bun run start
+    healthCheckPath: /api/health
+    envVars:
+      - { key: NODE_ENV, value: production }
+      - { key: MONGODB_URI, sync: false }
+      - { key: JWT_SECRET, sync: false }
+      - { key: CLIENT_ORIGIN, sync: false }
+      - { key: API_PUBLIC_URL, sync: false }
+      - { key: ADMIN_EMAIL, sync: false }
+      - { key: STORAGE_DRIVER, value: s3 }
